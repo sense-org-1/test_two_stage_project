@@ -1,0 +1,43 @@
+name: rani-ukamble-group/two_stage_project
+on:
+  push:
+  workflow_dispatch:
+concurrency:
+  group: "${{ github.ref }}"
+  cancel-in-progress: true
+jobs:
+  build_car:
+    runs-on: ubuntu-latest
+    container:
+      image: alpine
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v4.1.0
+      with:
+        fetch-depth: 20
+        lfs: true
+    - run: echo "building the car"
+    - run: mkdir build
+    - run: cd build
+    - run: touch car.txt
+    - run: echo "sweet car" > car.txt
+    - uses: actions/upload-artifact@v4.1.0
+      if: success()
+      with:
+        name: "${{ github.job }}"
+        path: build/
+  test_car:
+    needs: build_car
+    runs-on: ubuntu-latest
+    container:
+      image: alpine
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v4.1.0
+      with:
+        fetch-depth: 20
+        lfs: true
+    - uses: actions/download-artifact@v4.1.0
+    - run: echo "testing the car...deploy manually"
+    - run: test -f build/car.txt
+    - run: grep "sweet" build/car.txt
